@@ -2,8 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/mirror-android.iml" filepath="$PROJECT_DIR$/.idea/modules/mirror-android.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/mirror-android.app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/mirror-android.app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/MirrorExample.iml" filepath="$PROJECT_DIR$/.idea/modules/MirrorExample.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/MirrorExample.app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/MirrorExample.app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/mirror/MirrorExample.mirror.iml" filepath="$PROJECT_DIR$/.idea/modules/mirror/MirrorExample.mirror.iml" />
     </modules>
   </component>
 </project>
