@@ -1,4 +1,4 @@
-package com.scmp.mirrorexample
+package com.scmp.mirror
 
 import org.junit.Test
 

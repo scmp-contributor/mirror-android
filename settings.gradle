@@ -12,6 +12,6 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "MirrorExample"
-include ':app'
-include ':mirror'
+rootProject.name = "mirror"
+include ':mirror-sample'
+include ':mirror-android'
