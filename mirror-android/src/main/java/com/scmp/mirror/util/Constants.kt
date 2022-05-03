@@ -12,4 +12,6 @@ object Constants {
     const val SUCCESS_RESPONSE = 200
     const val STORAGE_NAME = "scmp-mirror-storage"
     const val STORAGE_USER_UUID = "user_uuid"
+    const val PING_INTERVAL = 15000L
+    const val MAX_PING_INTERVAL = 1005000L
 }

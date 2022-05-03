@@ -2,11 +2,14 @@ package com.scmp.mirror
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.CountDownTimer
 import com.aventrix.jnanoid.jnanoid.NanoIdUtils
 import com.scmp.mirror.model.EventType
 import com.scmp.mirror.model.TrackData
+import com.scmp.mirror.util.Constants.MAX_PING_INTERVAL
 import com.scmp.mirror.util.Constants.MIRROR_BASE_URL_PROD
 import com.scmp.mirror.util.Constants.MIRROR_BASE_URL_UAT
+import com.scmp.mirror.util.Constants.PING_INTERVAL
 import com.scmp.mirror.util.Constants.SCMP_ORGANIZATION_ID
 import com.scmp.mirror.util.Constants.STORAGE_NAME
 import com.scmp.mirror.util.Constants.STORAGE_USER_UUID
@@ -16,6 +19,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import timber.log.Timber
+import java.util.*
 
 
 /**
@@ -36,6 +40,10 @@ class MirrorAPI(
 
     /** for storage the user uuid information */
     private var sharedPref: SharedPreferences
+
+    /** for idle mode to ping every interval */
+    private var lastPingData: TrackData? = null
+    private lateinit var timerToPing: CountDownTimer
 
     companion object {
         /** shared instance for public use */
@@ -65,6 +73,7 @@ class MirrorAPI(
         /** init api call service */
         mirrorService = retrofitBuilder.build().create(MirrorService::class.java)
 
+        /** restore user uuid */
         sharedPref = context.getSharedPreferences(STORAGE_NAME, Context.MODE_PRIVATE)
         val storedUserUuid = sharedPref.getString(STORAGE_USER_UUID, null)
         if (storedUserUuid == null) {
@@ -77,6 +86,8 @@ class MirrorAPI(
             userUuid = storedUserUuid
         }
 
+        initTimer()
+
         /** set shared instance for public use */
         instance = this
 
@@ -87,6 +98,20 @@ class MirrorAPI(
                     "isDebug: $isDebug \n" +
                     "user uuid: $userUuid"
         )
+    }
+
+    /** timer to re-ping server again */
+    private fun initTimer() {
+        timerToPing = object : CountDownTimer(MAX_PING_INTERVAL, PING_INTERVAL) {
+            override fun onTick(millisUntilFinished: Long) {
+                if (millisUntilFinished < MAX_PING_INTERVAL - PING_INTERVAL) {
+                    lastPingData?.let { ping(it) }
+                }
+            }
+
+            override fun onFinish() {
+            }
+        }
     }
 
     fun ping(data: TrackData) {
@@ -106,6 +131,11 @@ class MirrorAPI(
         )
         call.enqueue(MirrorCallback(EventType.Ping))
         sequenceNumber += 1
+        lastPingData = data
+
+        /** restart the timer */
+        timerToPing.cancel()
+        timerToPing.start()
     }
 
     fun click(data: TrackData) {
