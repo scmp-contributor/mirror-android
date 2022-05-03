@@ -1,21 +1,18 @@
 package com.scmp.mirror
 
+import android.content.Context
+import android.content.SharedPreferences
 import com.aventrix.jnanoid.jnanoid.NanoIdUtils
-import com.google.gson.Gson
 import com.scmp.mirror.model.EventType
-import com.scmp.mirror.model.MirrorErrorResponse
 import com.scmp.mirror.model.TrackData
-import com.scmp.mirror.util.Constants.ERROR_RESPONSE
 import com.scmp.mirror.util.Constants.MIRROR_BASE_URL_PROD
 import com.scmp.mirror.util.Constants.MIRROR_BASE_URL_UAT
 import com.scmp.mirror.util.Constants.SCMP_ORGANIZATION_ID
-import com.scmp.mirror.util.Constants.SUCCESS_RESPONSE
+import com.scmp.mirror.util.Constants.STORAGE_NAME
+import com.scmp.mirror.util.Constants.STORAGE_USER_UUID
 import com.scmp.mirror.util.MirrorService
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import timber.log.Timber
@@ -25,6 +22,7 @@ import timber.log.Timber
  * Created by wooyukit on 26,April,2022
  */
 class MirrorAPI(
+    context: Context,
     private val organizationId: String = SCMP_ORGANIZATION_ID,
     private val domain: String,
     isDebug: Boolean
@@ -35,6 +33,9 @@ class MirrorAPI(
     /** Sequence number of ping events within same session */
     private var sequenceNumber: Int = 1
     private var userUuid: String
+
+    /** for storage the user uuid information */
+    private var sharedPref: SharedPreferences
 
     companion object {
         /** shared instance for public use */
@@ -63,7 +64,19 @@ class MirrorAPI(
         }
         /** init api call service */
         mirrorService = retrofitBuilder.build().create(MirrorService::class.java)
-        userUuid = NanoIdUtils.randomNanoId()
+
+        sharedPref = context.getSharedPreferences(STORAGE_NAME, Context.MODE_PRIVATE)
+        val storedUserUuid = sharedPref.getString(STORAGE_USER_UUID, null)
+        if (storedUserUuid == null) {
+            userUuid = NanoIdUtils.randomNanoId()
+            with(sharedPref.edit()) {
+                putString(STORAGE_USER_UUID, userUuid)
+                apply()
+            }
+        } else {
+            userUuid = storedUserUuid
+        }
+
         /** set shared instance for public use */
         instance = this
 
@@ -92,6 +105,7 @@ class MirrorAPI(
             eventType = EventType.Ping.value
         )
         call.enqueue(MirrorCallback(EventType.Ping))
+        sequenceNumber += 1
     }
 
     fun click(data: TrackData) {
@@ -110,5 +124,6 @@ class MirrorAPI(
             eventType = EventType.Click.value
         )
         call.enqueue(MirrorCallback(EventType.Click))
+        sequenceNumber += 1
     }
 }

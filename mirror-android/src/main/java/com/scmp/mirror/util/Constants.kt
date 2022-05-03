@@ -10,4 +10,6 @@ object Constants {
     const val SCMP_ORGANIZATION_ID = "1"
     const val ERROR_RESPONSE = 422
     const val SUCCESS_RESPONSE = 200
+    const val STORAGE_NAME = "scmp-mirror-storage"
+    const val STORAGE_USER_UUID = "user_uuid"
 }
