@@ -14,12 +14,18 @@ import timber.log.Timber
  */
 class MirrorCallback(private val eventType: EventType) : Callback<Unit> {
     private val gson = Gson()
-    private val eventTypeValue = eventType
+    private val eventTypeValue = eventType.value
 
     override fun onResponse(call: Call<Unit>, response: Response<Unit>) {
         when {
             response.code() == Constants.SUCCESS_RESPONSE -> {
-                Timber.d("Mirror ${eventType.value} Request Response Success")
+                Timber.d("Mirror $eventTypeValue Request Response Success")
+                val url = call.request().url
+                val requestBody = url.queryParameterNames.joinToString("\n") {
+                    "$it : ${url.queryParameter(it)}"
+                }
+                Timber.d("====== Request Body Start ======\n $requestBody")
+                Timber.d("====== Request Body End ======")
             }
             response.code() == Constants.ERROR_RESPONSE -> {
                 /** parse the error message from server */
@@ -27,9 +33,9 @@ class MirrorCallback(private val eventType: EventType) : Callback<Unit> {
                     val errorDetailString = response.errorBody()?.string()
                     val errorDetail =
                         gson.fromJson(errorDetailString, MirrorErrorResponse::class.java)
-                    Timber.e("Mirror ${eventType.value} Request Response Error: $errorDetail")
+                    Timber.e("Mirror $eventTypeValue Request Response Error: $errorDetail")
                 } catch (e: Throwable) {
-                    Timber.e("Mirror ${eventType.value} Request Response Unknown Error")
+                    Timber.e("Mirror $eventTypeValue Request Response Unknown Error")
                 }
             }
             else -> {

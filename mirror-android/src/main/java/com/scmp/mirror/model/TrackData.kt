@@ -1,7 +1,5 @@
 package com.scmp.mirror.model
 
-import retrofit2.http.Query
-
 /**
  * Created by wooyukit on 28,April,2022
  */

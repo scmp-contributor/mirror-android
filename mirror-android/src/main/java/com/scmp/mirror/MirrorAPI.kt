@@ -88,7 +88,8 @@ class MirrorAPI(
             author = data.author,
             pageTitle = data.pageTitle,
             internalReferrer = data.internalReferrer,
-            externalReferrer = data.externalReferrer
+            externalReferrer = data.externalReferrer,
+            eventType = EventType.Ping.value
         )
         call.enqueue(MirrorCallback(EventType.Ping))
     }
@@ -105,7 +106,8 @@ class MirrorAPI(
             author = data.author,
             pageTitle = data.pageTitle,
             internalReferrer = data.internalReferrer,
-            externalReferrer = data.externalReferrer
+            externalReferrer = data.externalReferrer,
+            eventType = EventType.Click.value
         )
         call.enqueue(MirrorCallback(EventType.Click))
     }
