@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">mirror</string>
+    <string name="title">Mirror SDK Sample"</string>
+    <string name="ping">Ping</string>
+    <string name="click">Click</string>
 </resources>

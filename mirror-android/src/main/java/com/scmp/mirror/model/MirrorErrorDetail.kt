@@ -6,7 +6,7 @@ import com.google.gson.annotations.SerializedName
 /**
  * Created by wooyukit on 28,April,2022
  */
-data class MirrorDetail(
+data class MirrorErrorDetail(
     @SerializedName("loc")
     @Expose
     var loc: List<String>? = null,

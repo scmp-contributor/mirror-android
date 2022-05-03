@@ -6,8 +6,8 @@ import com.google.gson.annotations.SerializedName
 /**
  * Created by wooyukit on 28,April,2022
  */
-data class MirrorResponse(
+data class MirrorErrorResponse(
     @SerializedName("detail")
     @Expose
-    var loc: List<MirrorDetail>? = null
+    var errorDetails: List<MirrorErrorDetail>? = null
 )
