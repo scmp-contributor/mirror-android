@@ -3,9 +3,13 @@ package com.scmp.mirror
 import android.content.Context
 import android.content.SharedPreferences
 import android.os.CountDownTimer
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ProcessLifecycleOwner
 import com.aventrix.jnanoid.jnanoid.NanoIdUtils
 import com.scmp.mirror.model.EventType
 import com.scmp.mirror.model.TrackData
+import com.scmp.mirror.util.Constants.MAX_ENGAGEMENT_INTERVAL
 import com.scmp.mirror.util.Constants.MAX_PING_INTERVAL
 import com.scmp.mirror.util.Constants.MIRROR_BASE_URL_PROD
 import com.scmp.mirror.util.Constants.MIRROR_BASE_URL_UAT
@@ -21,7 +25,6 @@ import retrofit2.converter.gson.GsonConverterFactory
 import timber.log.Timber
 import java.util.*
 
-
 /**
  * Created by wooyukit on 26,April,2022
  */
@@ -30,7 +33,7 @@ class MirrorAPI(
     private val organizationId: String = SCMP_ORGANIZATION_ID,
     private val domain: String,
     isDebug: Boolean
-) {
+) : DefaultLifecycleObserver {
 
     private val mirrorService: MirrorService
 
@@ -45,6 +48,10 @@ class MirrorAPI(
     private var lastPingData: TrackData? = null
     private lateinit var timerToPing: CountDownTimer
 
+    private lateinit var engageTimer: CountDownTimer
+    private var engageTime = 0
+
+
     companion object {
         /** shared instance for public use */
         lateinit var instance: MirrorAPI
@@ -55,6 +62,9 @@ class MirrorAPI(
         if (isDebug) {
             Timber.plant(Timber.DebugTree())
         }
+
+        /** init life cycle observer */
+        ProcessLifecycleOwner.get().lifecycle.addObserver(this)
 
         /** init retrofit for api call */
         val retrofitBuilder = Retrofit.Builder()
@@ -100,12 +110,37 @@ class MirrorAPI(
         )
     }
 
+    @Override
+    override fun onResume(owner: LifecycleOwner) {
+        super.onResume(owner)
+        Timber.d("Mirror App Foreground")
+        lastPingData?.let { ping(it) }
+    }
+
+    @Override
+    override fun onStop(owner: LifecycleOwner) {
+        super.onStop(owner)
+        Timber.d("Mirror App Background")
+        timerToPing.cancel()
+        engageTimer.cancel()
+    }
+
     /** timer to re-ping server again */
     private fun initTimer() {
         timerToPing = object : CountDownTimer(MAX_PING_INTERVAL, PING_INTERVAL) {
             override fun onTick(millisUntilFinished: Long) {
                 if (millisUntilFinished < MAX_PING_INTERVAL - PING_INTERVAL) {
-                    lastPingData?.let { ping(it) }
+                    lastPingData?.let { ping(it, isForcePing = true) }
+                }
+            }
+
+            override fun onFinish() {
+            }
+        }
+        engageTimer = object : CountDownTimer(MAX_ENGAGEMENT_INTERVAL, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                if (millisUntilFinished < MAX_ENGAGEMENT_INTERVAL - 1000) {
+                    engageTime += 1
                 }
             }
 
@@ -114,7 +149,16 @@ class MirrorAPI(
         }
     }
 
-    fun ping(data: TrackData) {
+    /** public functions */
+    fun ping(data: TrackData, isForcePing: Boolean = false) {
+        /** restart the timer */
+        if (!isForcePing) {
+            timerToPing.cancel()
+            timerToPing.start()
+            engageTimer.cancel()
+            engageTimer.start()
+            engageTime = 0
+        }
         val call = mirrorService.ping(
             organizationId = organizationId,
             domain = domain,
@@ -127,15 +171,12 @@ class MirrorAPI(
             pageTitle = data.pageTitle,
             internalReferrer = data.internalReferrer,
             externalReferrer = data.externalReferrer,
-            eventType = EventType.Ping.value
+            eventType = EventType.Ping.value,
+            engagedTime = engageTime
         )
         call.enqueue(MirrorCallback(EventType.Ping))
         sequenceNumber += 1
         lastPingData = data
-
-        /** restart the timer */
-        timerToPing.cancel()
-        timerToPing.start()
     }
 
     fun click(data: TrackData) {
@@ -151,7 +192,8 @@ class MirrorAPI(
             pageTitle = data.pageTitle,
             internalReferrer = data.internalReferrer,
             externalReferrer = data.externalReferrer,
-            eventType = EventType.Click.value
+            eventType = EventType.Click.value,
+            engagedTime = engageTime
         )
         call.enqueue(MirrorCallback(EventType.Click))
         sequenceNumber += 1

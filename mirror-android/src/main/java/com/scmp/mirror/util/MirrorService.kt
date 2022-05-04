@@ -45,7 +45,7 @@ interface MirrorService {
         @Query("et") eventType: String = EventType.Ping.value,
         /** The flag to indicate if visitor accepts tracking */
         @Query("nc") nc: Boolean = true,
-        /** Agent version*/
+        /** Agent version */
         @Query("v") agentVersion: String = Constants.AGENT_VERSION
     ): Call<Unit>
 }

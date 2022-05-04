@@ -14,4 +14,5 @@ object Constants {
     const val STORAGE_USER_UUID = "user_uuid"
     const val PING_INTERVAL = 15000L
     const val MAX_PING_INTERVAL = 1005000L
+    const val MAX_ENGAGEMENT_INTERVAL = 10000000L
 }

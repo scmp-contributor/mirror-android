@@ -6,7 +6,7 @@ package com.scmp.mirror.model
 data class TrackData(
     /** The clean URL path without query strings. (Usually from canonical URL) */
     var path: String,
-    var visitorType: VisitorType = VisitorType.Unclassified,
+    var visitorType: VisitorType = VisitorType.Guest,
     /** The page section of the article */
     var section: String? = null,
     /** The page authors of the article */
