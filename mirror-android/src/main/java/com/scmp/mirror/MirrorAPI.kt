@@ -3,9 +3,7 @@ package com.scmp.mirror
 import android.content.Context
 import android.content.SharedPreferences
 import android.os.CountDownTimer
-import androidx.lifecycle.DefaultLifecycleObserver
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.ProcessLifecycleOwner
+import androidx.lifecycle.*
 import com.aventrix.jnanoid.jnanoid.NanoIdUtils
 import com.scmp.mirror.model.EventType
 import com.scmp.mirror.model.TrackData
@@ -33,7 +31,7 @@ class MirrorAPI(
     private val organizationId: String = SCMP_ORGANIZATION_ID,
     private val domain: String,
     isDebug: Boolean
-) : DefaultLifecycleObserver {
+) : LifecycleObserver {
 
     private val mirrorService: MirrorService
 
@@ -110,16 +108,14 @@ class MirrorAPI(
         )
     }
 
-    @Override
-    override fun onResume(owner: LifecycleOwner) {
-        super.onResume(owner)
+    @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
+    fun onResume() {
         Timber.d("Mirror App Foreground")
         lastPingData?.let { ping(it) }
     }
 
-    @Override
-    override fun onStop(owner: LifecycleOwner) {
-        super.onStop(owner)
+    @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
+    fun onStop() {
         Timber.d("Mirror App Background")
         timerToPing.cancel()
         engageTimer.cancel()
