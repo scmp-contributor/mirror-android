@@ -12,7 +12,7 @@ import timber.log.Timber
 /**
  * Created by wooyukit on 03,May,2022
  */
-class MirrorCallback(private val eventType: EventType) : Callback<Unit> {
+class MirrorCallback(eventType: EventType) : Callback<Unit> {
     private val gson = Gson()
     private val eventTypeValue = eventType.value
 
@@ -24,8 +24,8 @@ class MirrorCallback(private val eventType: EventType) : Callback<Unit> {
                 val requestBody = url.queryParameterNames.joinToString("\n") {
                     "$it : ${url.queryParameter(it)}"
                 }
-                Timber.d("====== Request Body Start ======\n $requestBody")
-                Timber.d("====== Request Body End ======")
+                Timber.d("====== Mirror Request Body Start ======\n $requestBody")
+                Timber.d("====== Mirror Request Body End ======")
             }
             response.code() == Constants.ERROR_RESPONSE -> {
                 /** parse the error message from server */
