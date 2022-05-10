@@ -15,6 +15,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "mirror-android"
+rootProject.name = "mirror"
 include ':mirror-sample'
 include ':mirror-android'

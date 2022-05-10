@@ -69,7 +69,7 @@ class MirrorAPI(
             .baseUrl(if (isDebug) MIRROR_BASE_URL_UAT else MIRROR_BASE_URL_PROD)
             .addConverterFactory(GsonConverterFactory.create())
 
-        /** add debug interceptor for api call when debugging
+        /** add debug interceptor for api call when debugging */
         if (isDebug) {
             val interceptor = HttpLoggingInterceptor()
             interceptor.level = HttpLoggingInterceptor.Level.BASIC
@@ -77,7 +77,7 @@ class MirrorAPI(
                 .addInterceptor(interceptor)
                 .build()
             retrofitBuilder.client(client)
-        }*/
+        }
         /** init api call service */
         mirrorService = retrofitBuilder.build().create(MirrorService::class.java)
 

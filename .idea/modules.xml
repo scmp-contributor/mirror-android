@@ -2,15 +2,15 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/mirror-android.iml" filepath="$PROJECT_DIR$/.idea/modules/mirror-android.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/mirror-android/mirror-android.mirror-android.iml" filepath="$PROJECT_DIR$/.idea/modules/mirror-android/mirror-android.mirror-android.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/mirror-android/mirror-android.mirror-android.androidTest.iml" filepath="$PROJECT_DIR$/.idea/modules/mirror-android/mirror-android.mirror-android.androidTest.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/mirror-android/mirror-android.mirror-android.main.iml" filepath="$PROJECT_DIR$/.idea/modules/mirror-android/mirror-android.mirror-android.main.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/mirror-android/mirror-android.mirror-android.unitTest.iml" filepath="$PROJECT_DIR$/.idea/modules/mirror-android/mirror-android.mirror-android.unitTest.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/mirror-sample/mirror-android.mirror-sample.iml" filepath="$PROJECT_DIR$/.idea/modules/mirror-sample/mirror-android.mirror-sample.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/mirror-sample/mirror-android.mirror-sample.androidTest.iml" filepath="$PROJECT_DIR$/.idea/modules/mirror-sample/mirror-android.mirror-sample.androidTest.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/mirror-sample/mirror-android.mirror-sample.main.iml" filepath="$PROJECT_DIR$/.idea/modules/mirror-sample/mirror-android.mirror-sample.main.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/mirror-sample/mirror-android.mirror-sample.unitTest.iml" filepath="$PROJECT_DIR$/.idea/modules/mirror-sample/mirror-android.mirror-sample.unitTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/mirror.iml" filepath="$PROJECT_DIR$/.idea/modules/mirror.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/mirror-android/mirror.mirror-android.iml" filepath="$PROJECT_DIR$/.idea/modules/mirror-android/mirror.mirror-android.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/mirror-android/mirror.mirror-android.androidTest.iml" filepath="$PROJECT_DIR$/.idea/modules/mirror-android/mirror.mirror-android.androidTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/mirror-android/mirror.mirror-android.main.iml" filepath="$PROJECT_DIR$/.idea/modules/mirror-android/mirror.mirror-android.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/mirror-android/mirror.mirror-android.unitTest.iml" filepath="$PROJECT_DIR$/.idea/modules/mirror-android/mirror.mirror-android.unitTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/mirror-sample/mirror.mirror-sample.iml" filepath="$PROJECT_DIR$/.idea/modules/mirror-sample/mirror.mirror-sample.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/mirror-sample/mirror.mirror-sample.androidTest.iml" filepath="$PROJECT_DIR$/.idea/modules/mirror-sample/mirror.mirror-sample.androidTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/mirror-sample/mirror.mirror-sample.main.iml" filepath="$PROJECT_DIR$/.idea/modules/mirror-sample/mirror.mirror-sample.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/mirror-sample/mirror.mirror-sample.unitTest.iml" filepath="$PROJECT_DIR$/.idea/modules/mirror-sample/mirror.mirror-sample.unitTest.iml" />
     </modules>
   </component>
 </project>
