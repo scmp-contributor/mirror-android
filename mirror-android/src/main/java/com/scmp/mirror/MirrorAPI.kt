@@ -1,7 +1,10 @@
 package com.scmp.mirror
 
+import android.app.Activity
+import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.Bundle
 import android.os.CountDownTimer
 import androidx.lifecycle.*
 import com.aventrix.jnanoid.jnanoid.NanoIdUtils
@@ -12,25 +15,32 @@ import com.scmp.mirror.util.Constants.MAX_PING_INTERVAL
 import com.scmp.mirror.util.Constants.MIRROR_BASE_URL_PROD
 import com.scmp.mirror.util.Constants.MIRROR_BASE_URL_UAT
 import com.scmp.mirror.util.Constants.PING_INTERVAL
+import com.scmp.mirror.util.Constants.PING_INTERVAL_BACKGROUND
 import com.scmp.mirror.util.Constants.SCMP_ORGANIZATION_ID
 import com.scmp.mirror.util.Constants.STORAGE_NAME
 import com.scmp.mirror.util.Constants.STORAGE_USER_UUID
+import com.scmp.mirror.util.Constants.USER_AGENT_MOBILE
+import com.scmp.mirror.util.Constants.USER_AGENT_TABLET
 import com.scmp.mirror.util.MirrorService
+import okhttp3.Interceptor
 import okhttp3.OkHttpClient
+import okhttp3.Response
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import timber.log.Timber
+import java.lang.ref.WeakReference
 import java.util.*
 
 /**
  * Created by wooyukit on 26,April,2022
  */
 class MirrorAPI(
-    context: Context,
+    application: Application,
     private val organizationId: String = SCMP_ORGANIZATION_ID,
-    private val domain: String,
-    isDebug: Boolean
+    private var domain: String,
+    isDebug: Boolean,
+    private val isTablet: Boolean = false
 ) : LifecycleObserver {
 
     private val mirrorService: MirrorService
@@ -38,6 +48,7 @@ class MirrorAPI(
     /** Sequence number of ping events within same session */
     private var sequenceNumber: Int = 1
     private var userUuid: String
+    private var pageSectionId: String? = null
 
     /** for storage the user uuid information */
     private var sharedPref: SharedPreferences
@@ -49,6 +60,8 @@ class MirrorAPI(
     private lateinit var engageTimer: CountDownTimer
     private var engageTime = 0
 
+    private var isAppInBackground = false
+
 
     companion object {
         /** shared instance for public use */
@@ -56,28 +69,36 @@ class MirrorAPI(
     }
 
     init {
-        /** init life cycle observer */
-        ProcessLifecycleOwner.get().lifecycle.addObserver(this)
+        initLifecycleObserver(application)
 
         /** init retrofit for api call */
         val retrofitBuilder = Retrofit.Builder()
             .baseUrl(if (isDebug) MIRROR_BASE_URL_UAT else MIRROR_BASE_URL_PROD)
             .addConverterFactory(GsonConverterFactory.create())
 
+        val clientBuilder = OkHttpClient.Builder()
+        val userAgentInterceptor = Interceptor { chain ->
+            val request = chain.request()
+            val requestWithUserAgent = request.newBuilder()
+                .header("User-Agent", if (isTablet) USER_AGENT_TABLET else USER_AGENT_MOBILE)
+                .build()
+            chain.proceed(requestWithUserAgent)
+        }
+        clientBuilder.addInterceptor(userAgentInterceptor)
+
         /** add debug interceptor for api call when debugging */
         if (isDebug) {
             val interceptor = HttpLoggingInterceptor()
             interceptor.level = HttpLoggingInterceptor.Level.BASIC
-            val client = OkHttpClient.Builder()
-                .addInterceptor(interceptor)
-                .build()
-            retrofitBuilder.client(client)
+            clientBuilder.addInterceptor(interceptor)
         }
+
+        retrofitBuilder.client(clientBuilder.build())
         /** init api call service */
         mirrorService = retrofitBuilder.build().create(MirrorService::class.java)
 
         /** restore user uuid */
-        sharedPref = context.getSharedPreferences(STORAGE_NAME, Context.MODE_PRIVATE)
+        sharedPref = application.getSharedPreferences(STORAGE_NAME, Context.MODE_PRIVATE)
         val storedUserUuid = sharedPref.getString(STORAGE_USER_UUID, null)
         if (storedUserUuid == null) {
             userUuid = NanoIdUtils.randomNanoId()
@@ -103,25 +124,66 @@ class MirrorAPI(
         )
     }
 
+    /** init lifecycle observer */
+    private fun initLifecycleObserver(application: Application) {
+        /** init life cycle observer */
+        ProcessLifecycleOwner.get().lifecycle.addObserver(this)
+
+        /**
+         *  Callbacks in ActivityLifecycle
+         *  Add other lifecycle related callbacks(e.g. onStart, onPause and onStop) here if necessary
+         */
+        application.registerActivityLifecycleCallbacks(object :
+            Application.ActivityLifecycleCallbacks {
+            override fun onActivityPaused(activity: Activity) {}
+            override fun onActivityStarted(activity: Activity) {}
+            override fun onActivityDestroyed(activity: Activity) {}
+            override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
+            override fun onActivityStopped(activity: Activity) {}
+            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
+                Timber.d("Mirror Activity Created")
+                /** reset the ping information */
+                timerToPing.cancel()
+                engageTimer.cancel()
+                engageTime = 0
+                lastPingData = null
+            }
+
+            override fun onActivityResumed(activity: Activity) {}
+        })
+    }
+
     @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
     fun onResume() {
         Timber.d("Mirror App Foreground")
-        lastPingData?.let { ping(it) }
+        isAppInBackground = false
+        timerToPing.cancel()
+        timerToPing.start()
+        lastPingData?.let { ping(it, isForcePing = true) }
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
     fun onStop() {
         Timber.d("Mirror App Background")
+        isAppInBackground = true
         timerToPing.cancel()
-        engageTimer.cancel()
+        timerToPing.start()
+        lastPingData?.let { ping(it, isForcePing = true) }
     }
+
 
     /** timer to re-ping server again */
     private fun initTimer() {
         timerToPing = object : CountDownTimer(MAX_PING_INTERVAL, PING_INTERVAL) {
             override fun onTick(millisUntilFinished: Long) {
                 if (millisUntilFinished < MAX_PING_INTERVAL - PING_INTERVAL) {
-                    lastPingData?.let { ping(it, isForcePing = true) }
+                    val startedTime = ((MAX_PING_INTERVAL - millisUntilFinished) / 1000).toInt()
+                    Timber.d("Mirror timer to ping started : $startedTime")
+                    if (isAppInBackground && PING_INTERVAL_BACKGROUND.contains(startedTime)) {
+                        lastPingData?.let { ping(it, isForcePing = true) }
+                    } else if (!isAppInBackground) {
+                        lastPingData?.let { ping(it, isForcePing = true) }
+                    }
                 }
             }
 
@@ -149,6 +211,7 @@ class MirrorAPI(
             engageTimer.cancel()
             engageTimer.start()
             engageTime = 0
+            pageSectionId = NanoIdUtils.randomNanoId()
         }
         val call = mirrorService.ping(
             organizationId = organizationId,
@@ -160,6 +223,7 @@ class MirrorAPI(
             section = data.section,
             author = data.author,
             pageTitle = data.pageTitle,
+            pageSectionId = pageSectionId,
             internalReferrer = data.internalReferrer,
             externalReferrer = data.externalReferrer,
             eventType = EventType.Ping.value,
@@ -181,6 +245,7 @@ class MirrorAPI(
             section = data.section,
             author = data.author,
             pageTitle = data.pageTitle,
+            pageSectionId = pageSectionId,
             internalReferrer = data.internalReferrer,
             externalReferrer = data.externalReferrer,
             eventType = EventType.Click.value,

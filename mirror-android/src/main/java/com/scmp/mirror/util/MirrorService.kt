@@ -35,6 +35,8 @@ interface MirrorService {
         @Query("a") author: String? = null,
         /** The page title */
         @Query("pt") pageTitle: String? = null,
+        /** The page session ID for correlating browsing behaviors under a single page. Generated on client side and store locally. 21 chars length by NanoID. */
+        @Query("pi") pageSectionId: String? = null,
         /** The page referrer from same domain */
         @Query("ir") internalReferrer: String? = null,
         /** The page referrer from other domain */

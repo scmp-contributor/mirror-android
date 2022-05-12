@@ -15,7 +15,7 @@ class MainActivity : AppCompatActivity() {
         }
         setContentView(R.layout.activity_main)
         /** init the mirror api with below one line code */
-        MirrorAPI(context = this, domain = "www.scmp.com", isDebug = true)
+        MirrorAPI(application = this.application, domain = "www.scmp.com", isDebug = true)
 
         val pingButton = findViewById<Button>(R.id.main_activity_ping_button)
         pingButton.setOnClickListener {
