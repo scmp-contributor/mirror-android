@@ -58,7 +58,7 @@ class MirrorAPI(
     private lateinit var timerToPing: CountDownTimer
 
     private lateinit var engageTimer: CountDownTimer
-    private var engageTime = 0
+    private var engageTime = 1
 
     private var isAppInBackground = false
 
@@ -145,7 +145,7 @@ class MirrorAPI(
                 /** reset the ping information */
                 timerToPing.cancel()
                 engageTimer.cancel()
-                engageTime = 0
+                engageTime = 1
                 lastPingData = null
             }
 
@@ -210,7 +210,7 @@ class MirrorAPI(
             timerToPing.start()
             engageTimer.cancel()
             engageTimer.start()
-            engageTime = 0
+            engageTime = 1
             pageSectionId = NanoIdUtils.randomNanoId()
         }
         val call = mirrorService.ping(
