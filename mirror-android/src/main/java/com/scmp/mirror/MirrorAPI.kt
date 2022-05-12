@@ -56,11 +56,6 @@ class MirrorAPI(
     }
 
     init {
-        /** init logger */
-        if (isDebug) {
-            Timber.plant(Timber.DebugTree())
-        }
-
         /** init life cycle observer */
         ProcessLifecycleOwner.get().lifecycle.addObserver(this)
 
