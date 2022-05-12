@@ -254,4 +254,8 @@ class MirrorAPI(
         call.enqueue(MirrorCallback(EventType.Click))
         sequenceNumber += 1
     }
+
+    fun updateDomain(domain: String) {
+        this.domain = domain
+    }
 }
