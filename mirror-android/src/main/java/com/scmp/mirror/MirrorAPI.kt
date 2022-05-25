@@ -231,9 +231,6 @@ class MirrorAPI(
                 engageTimer.cancel()
                 engageTimer.start()
             }
-            MotionEvent.ACTION_MOVE -> {
-                Timber.d("Mirror Touch Action Move")
-            }
             MotionEvent.ACTION_UP -> {
                 Timber.d("Mirror Touch Action Up")
                 engageTimer.cancel()
@@ -283,7 +280,7 @@ class MirrorAPI(
             internalReferrer = data.internalReferrer,
             externalReferrer = data.externalReferrer,
             eventType = EventType.Ping.value,
-            engagedTime = engageTime,
+            engagedTime = min(engageTime, 15),
             ff = ff
         )
         call.enqueue(MirrorCallback(EventType.Ping))
@@ -292,6 +289,7 @@ class MirrorAPI(
         engageTime = 0
         timerToPing.cancel()
         timerToPing.start()
+        Timber.d("Mirror current mode ${currentActiveMode.name} + current ping interval $currentPingInterval")
     }
 
     fun click(data: TrackData) {

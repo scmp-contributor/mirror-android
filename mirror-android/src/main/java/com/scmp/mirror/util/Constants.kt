@@ -6,7 +6,7 @@ package com.scmp.mirror.util
 object Constants {
     const val MIRROR_BASE_URL_PROD = "https://mirror.i-scmp.com/"
     const val MIRROR_BASE_URL_UAT = "https://uat-mirror.i-scmp.com/"
-    const val AGENT_VERSION = "ma-0.1.6"
+    const val AGENT_VERSION = "ma-0.2.0"
     const val SCMP_ORGANIZATION_ID = "1"
     const val ERROR_RESPONSE = 422
     const val SUCCESS_RESPONSE = 200
