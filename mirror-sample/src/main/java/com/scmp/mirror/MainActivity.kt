@@ -1,6 +1,7 @@
 package com.scmp.mirror
 
 import android.os.Bundle
+import android.view.MotionEvent
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import com.scmp.mirror.model.TrackData
@@ -26,5 +27,10 @@ class MainActivity : AppCompatActivity() {
         clickButton.setOnClickListener {
             MirrorAPI.instance.click(TrackData(path = "testing.com"))
         }
+    }
+
+    override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
+        MirrorAPI.instance.dispatchTouchEvent(ev)
+        return super.dispatchTouchEvent(ev)
     }
 }

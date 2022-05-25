@@ -6,15 +6,17 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.view.MotionEvent
+import android.view.Window
 import androidx.lifecycle.*
 import com.aventrix.jnanoid.jnanoid.NanoIdUtils
-import com.scmp.mirror.model.EventType
-import com.scmp.mirror.model.TrackData
+import com.scmp.mirror.model.*
 import com.scmp.mirror.util.Constants.MAX_ENGAGEMENT_INTERVAL
 import com.scmp.mirror.util.Constants.MAX_PING_INTERVAL
 import com.scmp.mirror.util.Constants.MIRROR_BASE_URL_PROD
 import com.scmp.mirror.util.Constants.MIRROR_BASE_URL_UAT
 import com.scmp.mirror.util.Constants.PING_INTERVAL
+import com.scmp.mirror.util.Constants.PING_INTERVAL_ACTIVE
 import com.scmp.mirror.util.Constants.PING_INTERVAL_BACKGROUND
 import com.scmp.mirror.util.Constants.SCMP_ORGANIZATION_ID
 import com.scmp.mirror.util.Constants.STORAGE_NAME
@@ -31,6 +33,8 @@ import retrofit2.converter.gson.GsonConverterFactory
 import timber.log.Timber
 import java.lang.ref.WeakReference
 import java.util.*
+import kotlin.math.min
+import kotlin.math.round
 
 /**
  * Created by wooyukit on 26,April,2022
@@ -56,12 +60,14 @@ class MirrorAPI(
     /** for idle mode to ping every interval */
     private var lastPingData: TrackData? = null
     private lateinit var timerToPing: CountDownTimer
+    private var currentPingInterval = PING_INTERVAL_ACTIVE
 
     private lateinit var engageTimer: CountDownTimer
-    private var engageTime = 1
+    private var lastTouchTime: Long? = null
+    private var engageTime = 0
 
-    private var isAppInBackground = false
-
+    /** Current Mode State */
+    private var currentActiveMode: ActiveMode = ActiveMode.ACTIVE
 
     companion object {
         /** shared instance for public use */
@@ -145,7 +151,9 @@ class MirrorAPI(
                 /** reset the ping information */
                 timerToPing.cancel()
                 engageTimer.cancel()
-                engageTime = 1
+                engageTime = 0
+                lastTouchTime = null
+                sequenceNumber = 1
                 lastPingData = null
             }
 
@@ -156,21 +164,22 @@ class MirrorAPI(
     @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
     fun onResume() {
         Timber.d("Mirror App Foreground")
-        isAppInBackground = false
+        currentActiveMode = ActiveMode.ACTIVE
         timerToPing.cancel()
         timerToPing.start()
+        lastTouchTime = null
         lastPingData?.let { ping(it, isForcePing = true) }
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
     fun onStop() {
         Timber.d("Mirror App Background")
-        isAppInBackground = true
+        currentActiveMode = ActiveMode.BACKGROUND
         timerToPing.cancel()
         timerToPing.start()
+        lastTouchTime = null
         lastPingData?.let { ping(it, isForcePing = true) }
     }
-
 
     /** timer to re-ping server again */
     private fun initTimer() {
@@ -179,10 +188,8 @@ class MirrorAPI(
                 if (millisUntilFinished < MAX_PING_INTERVAL - PING_INTERVAL) {
                     val startedTime = ((MAX_PING_INTERVAL - millisUntilFinished) / 1000).toInt()
                     Timber.d("Mirror timer to ping started : $startedTime")
-                    if (isAppInBackground && PING_INTERVAL_BACKGROUND.contains(startedTime)) {
-                        lastPingData?.let { ping(it, isForcePing = true) }
-                    } else if (!isAppInBackground) {
-                        lastPingData?.let { ping(it, isForcePing = true) }
+                    if (startedTime == currentPingInterval) {
+                        lastPingData?.let { ping(it, isIntervalPing = true) }
                     }
                 }
             }
@@ -192,8 +199,9 @@ class MirrorAPI(
         }
         engageTimer = object : CountDownTimer(MAX_ENGAGEMENT_INTERVAL, 1000) {
             override fun onTick(millisUntilFinished: Long) {
-                if (millisUntilFinished < MAX_ENGAGEMENT_INTERVAL - 1000) {
+                if (millisUntilFinished < MAX_ENGAGEMENT_INTERVAL) {
                     engageTime += 1
+                    Timber.d("Mirror engage time increase : $engageTime")
                 }
             }
 
@@ -202,17 +210,65 @@ class MirrorAPI(
         }
     }
 
-    /** public functions */
-    fun ping(data: TrackData, isForcePing: Boolean = false) {
-        /** restart the timer */
-        if (!isForcePing) {
-            timerToPing.cancel()
-            timerToPing.start()
-            engageTimer.cancel()
-            engageTimer.start()
-            engageTime = 1
-            pageSectionId = NanoIdUtils.randomNanoId()
+    /** touch event */
+    fun dispatchTouchEvent(ev: MotionEvent?) {
+        when (ev?.action) {
+            MotionEvent.ACTION_DOWN -> {
+                Timber.d("Mirror Touch Action Down")
+                if (currentActiveMode == ActiveMode.INACTIVE) {
+                    currentActiveMode = ActiveMode.ACTIVE
+                    currentPingInterval = PING_INTERVAL_ACTIVE
+                    lastPingData?.let { ping(it, isForcePing = true) }
+                    return
+                }
+                /** fill in the touch time gap within 5 seconds */
+                lastTouchTime?.let {
+                    val timeDiff = ((Date().time - it) / 1000).toInt()
+                    if (timeDiff <= 5) {
+                        engageTime += timeDiff
+                    }
+                }
+                engageTimer.cancel()
+                engageTimer.start()
+            }
+            MotionEvent.ACTION_MOVE -> {
+                Timber.d("Mirror Touch Action Move")
+            }
+            MotionEvent.ACTION_UP -> {
+                Timber.d("Mirror Touch Action Up")
+                engageTimer.cancel()
+                lastTouchTime = Date().time
+            }
         }
+    }
+
+    /** public functions */
+    fun ping(data: TrackData, isForcePing: Boolean = false, isIntervalPing: Boolean = false) {
+        val ff: Int
+        if (isForcePing) {
+            ff = 0
+            currentPingInterval =
+                currentActiveMode.getNextPingIntervalAfterModeChanged(currentPingInterval)
+        } else if (isIntervalPing) {
+            /** check mode change */
+            if (currentActiveMode == ActiveMode.ACTIVE && engageTime == 0) {
+                currentActiveMode = ActiveMode.INACTIVE
+                currentPingInterval =
+                    currentActiveMode.getNextPingIntervalAfterModeChanged(currentPingInterval)
+            } else {
+                currentPingInterval = currentActiveMode.getNextPingInterval(currentPingInterval)
+            }
+            ff = min(2 * currentPingInterval, 270)
+        } else {
+            lastTouchTime = null
+            sequenceNumber = 1
+            engageTime = 0
+            currentActiveMode = ActiveMode.ACTIVE
+            currentPingInterval = PING_INTERVAL_ACTIVE
+            pageSectionId = NanoIdUtils.randomNanoId()
+            ff = 45
+        }
+
         val call = mirrorService.ping(
             organizationId = organizationId,
             domain = domain,
@@ -227,11 +283,15 @@ class MirrorAPI(
             internalReferrer = data.internalReferrer,
             externalReferrer = data.externalReferrer,
             eventType = EventType.Ping.value,
-            engagedTime = engageTime
+            engagedTime = engageTime,
+            ff = ff
         )
         call.enqueue(MirrorCallback(EventType.Ping))
         sequenceNumber += 1
         lastPingData = data
+        engageTime = 0
+        timerToPing.cancel()
+        timerToPing.start()
     }
 
     fun click(data: TrackData) {
@@ -242,14 +302,10 @@ class MirrorAPI(
             uuid = userUuid,
             visitorType = data.visitorType.type,
             sequenceNumber = sequenceNumber,
-            section = data.section,
-            author = data.author,
-            pageTitle = data.pageTitle,
             pageSectionId = pageSectionId,
-            internalReferrer = data.internalReferrer,
-            externalReferrer = data.externalReferrer,
             eventType = EventType.Click.value,
-            engagedTime = engageTime
+            engagedTime = engageTime,
+            ci = data.clickUrl
         )
         call.enqueue(MirrorCallback(EventType.Click))
         sequenceNumber += 1

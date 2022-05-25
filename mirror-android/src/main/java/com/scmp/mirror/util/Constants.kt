@@ -13,9 +13,13 @@ object Constants {
     const val STORAGE_NAME = "scmp-mirror-storage"
     const val STORAGE_USER_UUID = "user_uuid"
     const val PING_INTERVAL = 15000L
-    const val MAX_PING_INTERVAL = 1005000L
-    const val MAX_ENGAGEMENT_INTERVAL = 10000000L
-    val PING_INTERVAL_BACKGROUND = listOf(30, 45, 75, 165, 1005)
+    const val MAX_PING_INTERVAL = 1000000000L
+    const val MAX_ENGAGEMENT_INTERVAL = 1000000000L
     const val USER_AGENT_MOBILE = "native-mobile-android"
     const val USER_AGENT_TABLET = "native-tablet-android"
+    const val PING_INTERVAL_ACTIVE = 15
+    val PING_INTERVAL_INACTIVE = listOf(15, 30, 45, 75, 135, 255)
+    val PING_INTERVAL_BACKGROUND = listOf(30, 45, 75, 165, 1005)
+    const val NO_SECTION = "No Section"
+    const val NO_AUTHOR = "No Author"
 }
