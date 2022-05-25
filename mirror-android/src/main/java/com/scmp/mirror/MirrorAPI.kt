@@ -164,11 +164,6 @@ class MirrorAPI(
     @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
     fun onResume() {
         Timber.d("Mirror App Foreground")
-        currentActiveMode = ActiveMode.ACTIVE
-        timerToPing.cancel()
-        timerToPing.start()
-        lastTouchTime = null
-        lastPingData?.let { ping(it, isForcePing = true) }
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
@@ -215,12 +210,6 @@ class MirrorAPI(
         when (ev?.action) {
             MotionEvent.ACTION_DOWN -> {
                 Timber.d("Mirror Touch Action Down")
-                if (currentActiveMode == ActiveMode.INACTIVE) {
-                    currentActiveMode = ActiveMode.ACTIVE
-                    currentPingInterval = PING_INTERVAL_ACTIVE
-                    lastPingData?.let { ping(it, isForcePing = true) }
-                    return
-                }
                 /** fill in the touch time gap within 5 seconds */
                 lastTouchTime?.let {
                     val timeDiff = ((Date().time - it) / 1000).toInt()
@@ -230,6 +219,14 @@ class MirrorAPI(
                 }
                 engageTimer.cancel()
                 engageTimer.start()
+
+                if (currentActiveMode == ActiveMode.INACTIVE) {
+                    currentActiveMode = ActiveMode.ACTIVE
+                    currentPingInterval = PING_INTERVAL_ACTIVE
+                    lastPingData?.let { ping(it, isForcePing = true) }
+                    engageTime = 0
+                    return
+                }
             }
             MotionEvent.ACTION_UP -> {
                 Timber.d("Mirror Touch Action Up")
@@ -311,5 +308,9 @@ class MirrorAPI(
 
     fun updateDomain(domain: String) {
         this.domain = domain
+    }
+
+    fun domainUrlAlias(urlAlias: String?): String {
+        return "https://$domain${urlAlias.orEmpty()}"
     }
 }
