@@ -254,13 +254,18 @@ class MirrorAPI(
             }
             ff = min(2 * currentPingInterval, 270)
         } else {
+            /** back from background mode and re-ping, defined as force ping */
+            if (currentActiveMode == ActiveMode.BACKGROUND && lastPingData?.path == data.path) {
+                ff = 0
+            } else {
+                sequenceNumber = 1
+                pageSectionId = NanoIdUtils.randomNanoId()
+                ff = 45
+            }
             lastTouchTime = null
-            sequenceNumber = 1
             engageTime = 0
             currentActiveMode = ActiveMode.ACTIVE
             currentPingInterval = PING_INTERVAL_ACTIVE
-            pageSectionId = NanoIdUtils.randomNanoId()
-            ff = 45
         }
 
         val call = mirrorService.ping(
