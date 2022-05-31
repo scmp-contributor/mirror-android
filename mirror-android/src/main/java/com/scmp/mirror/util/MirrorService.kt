@@ -46,7 +46,7 @@ interface MirrorService {
         click: to indicate a link was clicked */
         @Query("et") eventType: String = EventType.Ping.value,
         /** The flag to indicate if visitor accepts tracking */
-        @Query("nc") nc: Boolean = true,
+        @Query("nc") nc: Boolean = false,
         /** The metadata of click event */
         @Query("ci") ci: String? = null,
         /** The additional duration added to the event to extend the page browsing session */
